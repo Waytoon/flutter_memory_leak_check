@@ -1,6 +1,11 @@
 # flutter_memory_leak_check
 
-A new Flutter package.
+/// step 1：Add debugging options
+/// --observatory-port=50443
+///
+/// step 2：Run port forwarding tool
+/// cd forwarding_tool
+/// go run main.go
 
 ## Getting Started
 ```dart
