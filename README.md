@@ -1,5 +1,10 @@
 # flutter_memory_leak_check
 
+It is easy to know whether a variable is correctly reclaimed by memory.
+
+### principle:
+By using the reference as the key of the weak reference, when the GC is executed, if the reference can be recycled, it will be deleted from the weak reference.
+
 ### step 1：Add debugging options
 
 --observatory-port=50443
