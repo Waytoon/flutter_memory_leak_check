@@ -1,5 +1,5 @@
-import 'package:example/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_memory_leak_check/flutter_memory_leak_check.dart';
 
 class BasicPage extends StatefulWidget {
   const BasicPage({Key? key}) : super(key: key);
@@ -12,6 +12,10 @@ class _BasicPageState extends State<BasicPage> {
   int _counter = 0;
   List<String>? _memoryLeakList = [];
 
+  _BasicPageState() {
+    print("xxxxxx");
+  }
+
   Future _incrementCounter() async {
     _counter++;
 
@@ -22,7 +26,6 @@ class _BasicPageState extends State<BasicPage> {
         break;
       case 2:
         print("start gc");
-        _counter = 0;
         globalChecker.forceGC();
         print("gc completed!");
         break;
@@ -44,11 +47,6 @@ class _BasicPageState extends State<BasicPage> {
 
     setState(() {
     });
-  }
-
-  Expando x() {
-    var v = Expando();
-    return v;
   }
 
   @override

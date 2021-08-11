@@ -4,7 +4,7 @@ import 'package:vm_service/utils.dart';
 import 'package:vm_service/vm_service.dart';
 import 'package:vm_service/vm_service_io.dart';
 
-import 'memory_checker_temp_prohibited_open.dart';
+import 'temp.dart';
 
 /// step 1：Add debugging options
 /// --observatory-port=50443
@@ -48,7 +48,6 @@ class MemoryChecker {
 
       String url = convertToWebSocketUrl(serviceProtocolUrl: uri).toString();
       vmServiceConnectUri(url).then((VmService vmService) async {
-        //拿到vmService对象
         _vmService = vmService;
         vm = await _vmService.getVM();
 
@@ -56,14 +55,16 @@ class MemoryChecker {
         await _initLibraryID();
         print("get vm service successfully");
 
-        // _vmService.streamListen("GC").then((event) {
-        //   print("GC监听注册完毕");
-        // });
+        _vmService.streamListen("GC").then((event) {
+          print("GC monitoring is registered");
+        });
         //
         // _vmService.onGCEvent
         //     .listen(onData, onDone: onDone, onError: onError, cancelOnError: false);
       });
     });
+
+    initSystemList();
   }
 
   void _initMainIsolateID() {
@@ -105,19 +106,39 @@ class MemoryChecker {
     return dataInstance!;
   }
 
-  void addWatch(dynamic value, {String? remarks}) async {
-    if (inProduction) return;
-
+  _CodeInfo? getCodeInfo() {
     try {
       var v;
       print(v.as);
     }catch(e, s) {
       String c = "$s";
-      print(c);
-    }
+      List temp = c.split('\n');
+      var v = temp[3];
 
-    var codeLine = CodeLine('lib/main.dart', 69, remarks: remarks);
-    var c = MemoryCheckerInstanceData.getInstance(_checkerClassIndex++);
+      RegExp reg = RegExp("\\((([^\\.]+)\\.dart):(\\d+):(\\d+)\\)");
+      Iterable<Match> matches = reg.allMatches(v);
+      for (Match m in matches) {
+        String? filePath = m.group(1);
+        String? line = m.group(3);
+        return _CodeInfo(filePath!, int.parse(line!));
+      }
+    }
+  }
+
+  void addWatch(dynamic value, {String? remarks}) async {
+    if (inProduction) return;
+    if(value == null) return;
+
+    var codeInfo = getCodeInfo();
+    if(codeInfo == null)
+      throw "Failed to get code information";
+
+    var codeLine = CodeLine(
+        codeInfo.filePath,
+        codeInfo.line,
+        remarks: remarks);
+
+    var c = systemList[_checkerClassIndex++];
     var className = _getClassName(c);
     _checkerCodeLineMap[className] = codeLine;
 
@@ -179,6 +200,8 @@ class MemoryChecker {
   }
 }
 
+late MemoryChecker globalChecker;
+
 class CodeLine {
   String filePath;
   int line;
@@ -194,4 +217,11 @@ class CodeLine {
 
 Expando getMemoryCheckerExpando() {
   return MemoryChecker("").expando;
+}
+
+class _CodeInfo {
+  late String filePath;
+  late int line;
+
+  _CodeInfo(this.filePath, this.line);
 }
